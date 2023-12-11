@@ -28,13 +28,15 @@
 
     if (searchTerm.length <= 0 || scannedTextObj.length <= 0) {return result;}
 
+    // Check for potentially malicious searchTerms
+
     // What if search term, itself, has special characters?
 
     // What if search term occurs on a line break?
 
     // What if search term has a special character at the end? (i.e. not a space)
 
-    const regex = new RegExp(` ${searchTerm} `);
+    const regex = new RegExp("\\b" + searchTerm + "\\b");
     console.log(regex);
     for (let book of scannedTextObj)
     {
@@ -52,8 +54,6 @@
             }
         }
     }
-
-
     return result; 
 }
 
@@ -66,7 +66,7 @@ const twentyLeaguesIn = [
             {
                 "Page": 31,
                 "Line": 8,
-                "Text": "now simply went on by theatrical momentum.  The dark-"
+                "Text": "the wait we now simply went on by theatrical momentum.  The dark-"
             },
             {
                 "Page": 31,
@@ -86,6 +86,11 @@ const twentyLeaguesIn = [
 const twentyLeaguesOut = {
     "SearchTerm": "the",
     "Results": [
+        {
+            "ISBN": "9780000528531",
+            "Page": 31,
+            "Line": 8
+        },
         {
             "ISBN": "9780000528531",
             "Page": 31,
@@ -135,13 +140,13 @@ const twentyLeaguesOut = {
 */
 
 /* Edge Case 1: */
-const test2result = findSearchTermInBooks("!", twentyLeaguesIn);
-if (JSON.stringify(twentyLeaguesOut) === JSON.stringify(test3result)) {
+const test2result = findSearchTermInBooks("the", twentyLeaguesIn);
+if (JSON.stringify(twentyLeaguesOut) === JSON.stringify(test2result)) {
     console.log("PASS: Test 2");
 } else {
     console.log("FAIL: Test 2");
     console.log("Expected:", twentyLeaguesOut);
-    console.log("Received:", test3result);
+    console.log("Received:", test2result);
 }
 
 /* We can check that, given a known input, we get a known output. */
