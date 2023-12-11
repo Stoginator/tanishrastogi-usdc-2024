@@ -21,12 +21,39 @@
  function findSearchTermInBooks(searchTerm, scannedTextObj) {
     /** You will need to implement your search and 
      * return the appropriate object here. */
-
     var result = {
-        "SearchTerm": "",
+        "SearchTerm": searchTerm,
         "Results": []
     };
-    
+
+    if (searchTerm.length <= 0 || scannedTextObj.length <= 0) {return result;}
+
+    // What if search term, itself, has special characters?
+
+    // What if search term occurs on a line break?
+
+    // What if search term has a special character at the end? (i.e. not a space)
+
+    const regex = new RegExp(` ${searchTerm} `);
+    console.log(regex);
+    for (let book of scannedTextObj)
+    {
+        for (let content of book.Content)
+        {
+            console.log(content);
+            if (content.Text.search(regex) > -1)
+            {
+                var obj  = {
+                    "ISBN": book.ISBN,
+                    "Page": content.Page,
+                    "Line": content.Line,
+                };
+                result.Results.push(obj)
+            }
+        }
+    }
+
+
     return result; 
 }
 
@@ -39,12 +66,12 @@ const twentyLeaguesIn = [
             {
                 "Page": 31,
                 "Line": 8,
-                "Text": "now simply went on by her own momentum.  The dark-"
+                "Text": "now simply went on by theatrical momentum.  The dark-"
             },
             {
                 "Page": 31,
                 "Line": 9,
-                "Text": "ness was then profound; and however good the Canadian\'s"
+                "Text": "ness was then profound! And, however good the Canadian\'s"
             },
             {
                 "Page": 31,
@@ -73,32 +100,66 @@ const twentyLeaguesOut = {
 | | | |  \| || |  | |     | | |  _| \___ \ | | \___ \ 
 | |_| | |\  || |  | |     | | | |___ ___) || |  ___) |
  \___/|_| \_|___| |_|     |_| |_____|____/ |_| |____/ 
-                                                      
- */
+*/
 
 /* We have provided two unit tests. They're really just `if` statements that 
  * output to the console. We've provided two tests as examples, and 
  * they should pass with a correct implementation of `findSearchTermInBooks`. 
  * 
  * Please add your unit tests below.
- * */
+ * 
+*/
 
-/** We can check that, given a known input, we get a known output. */
-const test1result = findSearchTermInBooks("the", twentyLeaguesIn);
-if (JSON.stringify(twentyLeaguesOut) === JSON.stringify(test1result)) {
-    console.log("PASS: Test 1");
-} else {
-    console.log("FAIL: Test 1");
-    console.log("Expected:", twentyLeaguesOut);
-    console.log("Received:", test1result);
-}
+/* Empty search
 
-/** We could choose to check that we get the right number of results. */
-const test2result = findSearchTermInBooks("the", twentyLeaguesIn); 
-if (test2result.Results.length == 1) {
+*/
+
+/* Empty Scanned Book Content
+
+*/
+
+/* Search for a word that exists in the scanned book content. 
+
+*/
+
+/* Search for a word that does NOT exists in the scanned book content. 
+
+*/
+
+/* Search for a phase that exists in the scanned book content. 
+
+*/
+
+/* Search for a phrase does NOT exists in the scanned book content.
+
+*/
+
+/* Edge Case 1: */
+const test2result = findSearchTermInBooks("!", twentyLeaguesIn);
+if (JSON.stringify(twentyLeaguesOut) === JSON.stringify(test3result)) {
     console.log("PASS: Test 2");
 } else {
     console.log("FAIL: Test 2");
+    console.log("Expected:", twentyLeaguesOut);
+    console.log("Received:", test3result);
+}
+
+/* We can check that, given a known input, we get a known output. */
+const test3result = findSearchTermInBooks("the", twentyLeaguesIn);
+if (JSON.stringify(twentyLeaguesOut) === JSON.stringify(test3result)) {
+    console.log("PASS: Test 3");
+} else {
+    console.log("FAIL: Test 3");
+    console.log("Expected:", twentyLeaguesOut);
+    console.log("Received:", test3result);
+}
+
+/* We could choose to check that we get the right number of results. */
+const test4result = findSearchTermInBooks("the", twentyLeaguesIn); 
+if (test4result.Results.length == 1) {
+    console.log("PASS: Test 4");
+} else {
+    console.log("FAIL: Test 4");
     console.log("Expected:", twentyLeaguesOut.Results.length);
-    console.log("Received:", test2result.Results.length);
+    console.log("Received:", test4result.Results.length);
 }
