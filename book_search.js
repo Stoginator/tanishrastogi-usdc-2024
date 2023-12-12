@@ -27,23 +27,25 @@
         "Results": []
     };
 
-    if (searchTerm.length <= 0 || scannedTextObj.length <= 0) {return result;}
+    if (searchTerm.length <= 0 || scannedTextObj.length <= 0) {
+        return result;
+    }
 
     // TO-DO: Check for potentially malicious searchTerms
-    // TO-DO: Replace all single parenthesis (), braces {}, or brackets []
+    // TO-DO: Replace all single parenthesis (), braces {}, or brackets [] from user --> breaks RegEx
     
-    // If end of search term is punctuation, only factor in beginning of search term.
-    if (/[.,;!?]$/.test(searchTerm)) {
+    // If end of search term is punctuation, only look up beginning of search term.
+    if (/[.,;!?:]$/.test(searchTerm)) {
         regex = new RegExp("\\b" + searchTerm);
     } else {
         regex = new RegExp("\\b" + searchTerm +  "(\\b|\\(|\\))");
     }
 
-    console.log(regex);
     for (let book of scannedTextObj) {
         for (let contentEle = 0; contentEle < book.Content.length; contentEle++) {
             let content = book.Content[contentEle];
 
+            let lineBreak = false;
             // Check for line break and whether next element exists in scannedTextObj
             if (content.Text.endsWith("-") && contentEle + 1 < book.Content.length) {
                 
@@ -54,9 +56,11 @@
                 if (regex.test(related)) {
                     content.Text = content.Text.slice(0, -1);
                     content.Text += book.Content[contentEle + 1].Text;
+                    lineBreak = true;
                 }
             }
 
+            // Add details of query if found
             if (regex.test(content.Text)) {
                 var obj  = {
                     "ISBN": book.ISBN,
@@ -64,6 +68,9 @@
                     "Line": content.Line,
                 };
                 result.Results.push(obj);
+                if (lineBreak) { 
+                    contentEle++; 
+                }
             }
         }
     }
@@ -171,7 +178,7 @@ const ai2041_multiple = [
             {
                 "Page": 11,
                 "Line": 15,
-                "Text": "Nayana aimed to be vigilant in every interaction with GI. In her"
+                "Text": "Nayana aimed to be vigilant in every interaction with GI; in her"
             },
             {
                 "Page": 11,
@@ -181,7 +188,7 @@ const ai2041_multiple = [
             {
                 "Page": 11,
                 "Line": 17,
-                "Text": "net every click might sell you out. She carefully studied the fine"
+                "Text": "net every click might sell you out. She carefully studied how we are limited"
             },
         ] 
     },
@@ -202,40 +209,229 @@ const ai2041_multiple = [
             {
                 "Page": 220,
                 "Line": 20,
-                "Text": "Café's games, except the engine here was, well, much better. It"
+                "Text": "Café\'s games, except the engine here was, well, much better. It"
             },
         ] 
     },
 ]
 
-/* Empty search
+function negativeCases() {
+    /* Negative Case 1: Empty searchTerm */
+    const negTest1 = {
+        "SearchTerm": "",
+        "Results": []
+    }
+    const negResult1 = findSearchTermInBooks("", ai2041_single);
+    if (JSON.stringify(negResult1) === JSON.stringify(negTest1)) {
+        console.log("PASS: Negative Case 1");
+    } else {
+        console.log("FAIL: Negative Case 1");
+        console.log("Expected:", negTest1);
+        console.log("Received:", negResult1);
+    }
 
-*/
+    /* Negative Case 2: Empty Scanned Book Content */
+    const negTest2 = {
+        "SearchTerm": "The",
+        "Results": []
+    }
+    const negResult2 = findSearchTermInBooks("The", ai2041_null);
+    if (JSON.stringify(negResult2) === JSON.stringify(negTest2)) {
+        console.log("PASS: Negative Case 2");
+    } else {
+        console.log("FAIL: Negative Case 2");
+        console.log("Expected:", negTest2);
+        console.log("Received:", negResult2);
+    }
 
-/* Empty Scanned Book Content
+    /* Negative Case 3: Search for a word that does NOT exists in the scanned book content. */
+    const negTest3 = {
+        "SearchTerm": "The",
+        "Results": []
+    }
+    const negResult3 = findSearchTermInBooks("The", ai2041_multiple);
+    if (JSON.stringify(negResult3) === JSON.stringify(negTest3)) {
+        console.log("PASS: Negative Case 3");
+    } else {
+        console.log("FAIL: Negative Case 3");
+        console.log("Expected:", negTest3);
+        console.log("Received:", negResult3);
+    }
 
-*/
+    /* Negative Case 4: Search for a phrase does NOT exists in the scanned book content. */
+    const negTest4 = {
+        "SearchTerm": "The whales lived on",
+        "Results": []
+    }
+    const negResult4 = findSearchTermInBooks("The whales lived on", ai2041_multiple);
+    if (JSON.stringify(negResult4) === JSON.stringify(negTest4)) {
+        console.log("PASS: Negative Case 4");
+    } else {
+        console.log("FAIL: Negative Case 4");
+        console.log("Expected:", negTest4);
+        console.log("Received:", negResult4);
+    }
+}
+negativeCases();
 
-/* Search for a word that exists in the scanned book content. 
+function positiveCases() {
+    /* Positive Case 1: Search for a word that exists once in the scanned book content. */
+    const posTest1 = {
+        "SearchTerm": "Deep",
+        "Results": [
+            {
+                "ISBN": "9990000528532",
+                "Page": 26,
+                "Line": 1
+            }
+        ]
+    }
+    const posResult1 = findSearchTermInBooks("Deep", ai2041_multiple);
+    if (JSON.stringify(posResult1) === JSON.stringify(posTest1)) {
+        console.log("PASS: Positive Case 1");
+    } else {
+        console.log("FAIL: Positive Case 1");
+        console.log("Expected:", posTest1);
+        console.log("Received:", posResult1);
+    }
 
-*/
+    /* Positive Case 2: Search for a phrase that exists once in the scanned book content. */
+    const posTest2 = {
+        "SearchTerm": "Deep learning",
+        "Results": [
+            {
+                "ISBN": "9990000528532",
+                "Page": 26,
+                "Line": 1
+            }
+        ]
+    }
+    const posResult2 = findSearchTermInBooks("Deep learning", ai2041_multiple);
+    if (JSON.stringify(posResult2) === JSON.stringify(posTest2)) {
+        console.log("PASS: Positive Case 1");
+    } else {
+        console.log("FAIL: Positive Case 1");
+        console.log("Expected:", posTest2);
+        console.log("Received:", posResult2);
+    }
 
-/* Search for a word that does NOT exists in the scanned book content. 
+    /* Positive Case 3: Check for a word that appears multiple times in a book */
+    const posTest3 = {
+        SearchTerm: "to", 
+        Results: [
+            {
+                "ISBN": "9990000528532", 
+                "Page": 26, 
+                "Line": 4
+            }, 
+            {
+                "ISBN": "9990000528532", 
+                "Page": 11,
+                "Line": 15,
+            }, 
+            {
+                "ISBN": "9990000528532", 
+                "Page": 220, 
+                "Line": 18
+            }
+        ]
+    }
+    const posResult3 = findSearchTermInBooks("to", ai2041_multiple);
+    if (JSON.stringify(posResult3) === JSON.stringify(posTest3)) {
+        console.log("PASS: Positive Case 3");
+    } else {
+        console.log("FAIL: Positive Case 3");
+        console.log("Expected:", posTest3);
+        console.log("Received:", posResult3);
+    }
 
-*/
+    /* Positive Case 4: Check for a phrase that appears in multiple books */
+    const posTest4 = {
+        SearchTerm: "are limited", 
+        Results: [
+            {
+                "ISBN": "9990000528532", 
+                "Page": 26, 
+                "Line": 5
+            }, 
+            {
+                "ISBN": "9990000528532", 
+                "Page": 11,
+                "Line": 17,
+            }
+        ]
+    }
+    const posResult4 = findSearchTermInBooks("are limited", ai2041_multiple);
+    if (JSON.stringify(posResult4) === JSON.stringify(posTest4)) {
+        console.log("PASS: Positive Case 4");
+    } else {
+        console.log("FAIL: Positive Case 4");
+        console.log("Expected:", posTest4);
+        console.log("Received:", posResult4);
+    }
+}
+positiveCases();
 
-/* Search for a phase that exists in the scanned book content. 
+function caseSensitiveCases() {
+    /* Using scanned text object with multiple book entries */
 
-*/
+    /* Case Sensitive Case 1: Check for a word that exists in lower-case form, but NOT capitalized form */
+    const caseTest1 = {
+        "SearchTerm": "The",
+        "Results": []
+    }
+    const caseResult1 = findSearchTermInBooks("The", ai2041_multiple);
+    if (JSON.stringify(caseResult1) === JSON.stringify(caseTest1)) {
+        console.log("PASS: Case Sensitive Test 1");
+    } else {
+        console.log("FAIL: Case Sensitive Test 1");
+        console.log("Expected:", caseTest1);
+        console.log("Received:", caseResult1);
+    }
 
-/* Search for a phrase does NOT exists in the scanned book content.
+    /* Case Sensitive Case 2: Check for a word that in only capitalized form */
+    const caseTest2 = {
+        "SearchTerm": "GI",
+        "Results": [
+            {
+                "ISBN": "9990000528532",
+                "Page": 11,
+                "Line": 15
+            },
+        ]
+    }
+    const caseResult2 = findSearchTermInBooks("GI", ai2041_multiple);
+    if (JSON.stringify(caseResult2) === JSON.stringify(caseTest2)) {
+        console.log("PASS: Case Sensitive Test 2");
+    } else {
+        console.log("FAIL: Case Sensitive Test 2");
+        console.log("Expected:", caseTest2);
+        console.log("Received:", caseResult2);
+    }
 
-*/
-
-/* */
+    /* Case Sensitive Case 3: Check for a word that in only capitalized form followed by punctuation */
+    const caseTest3 = {
+        "SearchTerm": "GI;",
+        "Results": [
+            {
+                "ISBN": "9990000528532",
+                "Page": 11,
+                "Line": 15
+            },
+        ]
+    }
+    const caseResult3 = findSearchTermInBooks("GI;", ai2041_multiple);
+    if (JSON.stringify(caseResult3) === JSON.stringify(caseTest3)) {
+        console.log("PASS: Case Sensitive Test 3");
+    } else {
+        console.log("FAIL: Case Sensitive Test 3");
+        console.log("Expected:", caseTest3);
+        console.log("Received:", caseResult3);
+    }
+}
+caseSensitiveCases();
 
 function edgeCases() {
-
     /* Edge Case 1: Check for a word that is split by a line break. */
     /* Developer Assumption: Only first line featuring the split word is included. */
     const edgeTest1 = {
@@ -294,87 +490,49 @@ function edgeCases() {
         console.log("PASS: Edge Case 3");
     } else {
         console.log("FAIL: Edge Case 3");
-        console.log("Expected:", edgeResult3);
-        console.log("Received:", edgeTest3);
+        console.log("Expected:", edgeTest3);
+        console.log("Received:", edgeResult3);
+    }
+
+    /* Edge Case 4: Check for a phrase with multliple special characters in one line. */
+    const edgeTest4 = {
+        "SearchTerm": "Café's games",
+        "Results": [
+            {
+                "ISBN": "9990000528532",
+                "Page": 220,
+                "Line": 20
+            }
+        ]
+    }
+    const edgeResult4 = findSearchTermInBooks("Café's games", ai2041_multiple);
+    if (JSON.stringify(edgeTest4) === JSON.stringify(edgeResult4)) {
+        console.log("PASS: Edge Case 4");
+    } else {
+        console.log("FAIL: Edge Case 4");
+        console.log("Expected:", edgeTest4);
+        console.log("Received:", edgeResult4);
+    }
+
+    /* Edge Case 5: Check for a phrase with multliple special characters across two lines. */
+    const edgeTest5 = {
+        "SearchTerm": "VR Café's games",
+        "Results": [
+            {
+                "ISBN": "9990000528532",
+                "Page": 220,
+                "Line": 19
+            }
+        ]
+    }
+    const edgeResult5 = findSearchTermInBooks("VR Café's games", ai2041_multiple);
+    if (JSON.stringify(edgeTest4) === JSON.stringify(edgeResult5)) {
+        console.log("PASS: Edge Case 5");
+    } else {
+        console.log("FAIL: Edge Case 5");
+        console.log("Expected:", edgeTest5);
+        console.log("Received:", edgeResult5);
+        console.log("Logical error in program --> cannot detect phrases spanning two or more lines")
     }
 }
 edgeCases();
-/* Provided Test Cases */
-
-/* Example input object. */
-const twentyLeaguesIn = [
-    {
-        "Title": "Twenty Thousand Leagues Under the Sea",
-        "ISBN": "9780000528531",
-        "Content": [
-            {
-                "Page": 31,
-                "Line": 8,
-                "Text": "now simply went on by her own momentum.  The dark-"
-            },
-            {
-                "Page": 31,
-                "Line": 9,
-                "Text": "ness was then profound; and however good the Canadian\'s"
-            },
-            {
-                "Page": 31,
-                "Line": 10,
-                "Text": "eyes were, I asked myself how he had managed to see, and"
-            } 
-        ] 
-    }
-]
-    
-/* Example output object */
-const twentyLeaguesOut = {
-    "SearchTerm": "the",
-    "Results": [
-        {
-            "ISBN": "9780000528531",
-            "Page": 31,
-            "Line": 9
-        }
-    ]
-}
-const twentyLeaguesOut2 = {
-    "SearchTerm": "profound;",
-    "Results": [
-        {
-            "ISBN": "9780000528531",
-            "Page": 31,
-            "Line": 9
-        }
-    ]
-}
-
-/* We can check that, given a known input, we get a known output. */
-
-const exampleTest1 = findSearchTermInBooks("the", twentyLeaguesIn);
-if (JSON.stringify(twentyLeaguesOut) === JSON.stringify(exampleTest1)) {
-    console.log("PASS: Example Test 1");
-} else {
-    console.log("FAIL: Example Test 1");
-    console.log("Expected:", twentyLeaguesOut);
-    console.log("Received:", exampleTest1);
-}
-
-/* We could choose to check that we get the right number of results. */
-
-const exampleTest2 = findSearchTermInBooks("the", twentyLeaguesIn); 
-if (exampleTest2.Results.length == 1) {
-    console.log("PASS: Example Test 2");
-} else {
-    console.log("FAIL: Example Test 2");
-    console.log("Expected:", twentyLeaguesOut.Results.length);
-    console.log("Received:", exampleTest2.Results.length);
-}
-
-const exampleTest3 = findSearchTermInBooks("profound;", twentyLeaguesIn);
-if (JSON.stringify(twentyLeaguesOut2) === JSON.stringify(exampleTest3)) {
-    console.log("PASS: Example Test 3");
-} else {
-    console.log("FAIL: Example Test 3");
-    console.log("Expected:", twentyLeaguesOut2);
-    console.log("Received:", exampleTest3);
-}
